@@ -258,26 +258,26 @@ NO_PROXY    = localhost,127.0.0.1,::1
 
 </details>
 
-## 目录结构
+## 文件说明
 
-```text
-antigravity-v2rayn-launcher/
-├── Install.cmd               # 双击安装
-├── Uninstall.cmd             # 卸载还原
-├── Launch.cmd                # 手动启动／诊断
-├── Manage-Launcher.ps1       # 安装、入口维护与卸载
-├── Start-Antigravity.ps1     # 代理检测与应用启动
-├── AntigravityProxy.psm1     # 代理与进程环境处理
-├── LauncherInstall.psm1      # 入口备份、接管与恢复
-├── Dispatcher.cs             # 隐藏启动与参数转发
-├── Build-Dispatcher.ps1      # 在本机编译调度器
-├── tests/
-│   ├── Run-Tests.ps1
-│   └── Run-InstallTests.ps1
-├── README.md
-├── VALIDATION.md              # 实际验证记录
-└── LICENSE
-```
+| 文件 | 用途 |
+| --- | --- |
+| `.gitattributes` | 统一脚本与文档的换行格式 |
+| `.gitignore` | 排除本机状态、日志、备份和编译产物 |
+| `Install.cmd` | 双击安装并接管当前用户的启动入口 |
+| `Uninstall.cmd` | 卸载启动器并还原原有入口 |
+| `Launch.cmd` | 手动启动应用或执行代理诊断 |
+| `Manage-Launcher.ps1` | 管理安装、后台维护、修复和卸载 |
+| `Start-Antigravity.ps1` | 自动检测代理，配置进程环境并启动应用 |
+| `AntigravityProxy.psm1` | 提供代理筛选、连通性检测与参数处理函数 |
+| `LauncherInstall.psm1` | 备份、重定向及恢复快捷方式和注册表 |
+| `Dispatcher.cs` | 隐藏启动控制台并保留登录回调、文件等参数 |
+| `Build-Dispatcher.ps1` | 使用系统 .NET Framework 编译调度器 |
+| `tests/Run-Tests.ps1` | 验证代理、参数和进程环境处理 |
+| `tests/Run-InstallTests.ps1` | 验证入口接管、调度器和卸载还原 |
+| `VALIDATION.md` | 记录测试环境、检查范围与实际验证结果 |
+| `LICENSE` | MIT 开源许可证 |
+| `README.md` | 项目介绍、安装说明、参数和常见问题 |
 
 ## 测试与开源
 
