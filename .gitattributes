@@ -1,3 +1,4 @@
+# Keep Windows launch scripts in CRLF and documentation/source text in LF.
 *.ps1 text eol=crlf
 *.psm1 text eol=crlf
 *.cmd text eol=crlf
