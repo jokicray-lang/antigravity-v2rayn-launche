@@ -1,3 +1,4 @@
+# Exclude per-machine launcher state and generated artifacts from source releases.
 *.log
 *.zip
 .DS_Store
