@@ -1,4 +1,5 @@
 @echo off
+rem Start Antigravity manually or pass through preview and network diagnostic options.
 setlocal
 rem SPDX-License-Identifier: MIT
 rem ExecutionPolicy applies to this PowerShell process only.
