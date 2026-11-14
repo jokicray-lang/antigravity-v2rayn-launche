@@ -1,5 +1,6 @@
 #Requires -Version 5.1
 # SPDX-License-Identifier: MIT
+# Regression checks for shortcut/registry restoration and dispatcher argument forwarding.
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
