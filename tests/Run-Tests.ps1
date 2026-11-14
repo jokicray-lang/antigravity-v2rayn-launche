@@ -1,5 +1,6 @@
 #Requires -Version 5.1
 # SPDX-License-Identifier: MIT
+# Regression checks for proxy detection, launch arguments and process environment isolation.
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path (Split-Path -Parent $PSScriptRoot) 'AntigravityProxy.psm1') -Force -DisableNameChecking
