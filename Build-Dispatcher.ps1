@@ -1,5 +1,6 @@
 #Requires -Version 5.1
 # SPDX-License-Identifier: MIT
+# Build the GUI dispatcher locally with the Windows .NET Framework compiler.
 param([Parameter(Mandatory)][string]$OutputPath)
 $ErrorActionPreference = 'Stop'
 if ($PSVersionTable.PSEdition -ne 'Desktop') { throw 'Build with Windows PowerShell 5.1 (powershell.exe).' }
