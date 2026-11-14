@@ -1,5 +1,6 @@
 #Requires -Version 5.1
 # SPDX-License-Identifier: MIT
+# Select a reachable proxy and launch or forward Antigravity requests with that proxy.
 <#
 .SYNOPSIS
 Launch Antigravity using a local v2rayN HTTP/mixed proxy.
