@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// Run the launcher without a console window and forward URI/file arguments as JSON.
 // Built locally with Windows PowerShell / .NET Framework; no VBScript dependency.
 using System;
 using System.IO;
