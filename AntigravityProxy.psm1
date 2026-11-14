@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MIT
+# Detect local HTTP/mixed proxies and scope proxy variables to launched processes.
 Set-StrictMode -Version 2.0
 
 function Get-OptionalProperty {
