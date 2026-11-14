@@ -1,5 +1,6 @@
 #Requires -Version 5.1
 # SPDX-License-Identifier: MIT
+# Install the launcher, maintain matching entry points and restore original settings.
 [CmdletBinding()]
 param([string]$InstallDirectory = (Join-Path $env:LOCALAPPDATA 'AntigravityProxyLauncher'), [string]$AntigravityPath, [switch]$Preview, [switch]$Repair, [switch]$Watch, [switch]$Uninstall)
 $ErrorActionPreference = 'Stop'
