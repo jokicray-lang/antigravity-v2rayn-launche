@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MIT
+# Back up, redirect, repair and restore per-user shortcuts and registry values.
 Set-StrictMode -Version 2.0
 
 function Read-LauncherState([string]$Directory) {
