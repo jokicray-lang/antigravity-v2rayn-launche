@@ -13,7 +13,7 @@ function Save-LauncherState($State) {
     Move-Item -LiteralPath ($path + '.tmp') -Destination $path -Force
 }
 function New-LauncherState([string]$Directory, [string]$Application) {
-    [pscustomobject]@{ Version='2.0.0'; Installed=$true; Directory=$Directory; Application=$Application; Shortcuts=@(); Registry=@(); CreatedKeys=@() }
+    [pscustomobject]@{ Version='2.0.1'; Installed=$true; Directory=$Directory; Application=$Application; Shortcuts=@(); Registry=@(); CreatedKeys=@() }
 }
 function Get-LauncherMutexName([string]$Directory, [string]$Role = 'Install') {
     $sha = [Security.Cryptography.SHA256]::Create()
