@@ -1,6 +1,6 @@
 #Requires -Version 5.1
 # SPDX-License-Identifier: MIT
-# Regression checks for shortcut/registry restoration and dispatcher argument forwarding.
+# Regression checks for entry restoration, argument forwarding and windowless maintenance.
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -114,6 +114,47 @@ try {
         $actual = ConvertFrom-Json -InputObject (Get-Content -LiteralPath (Join-Path $dispatchRoot 'received.json') -Raw)
         Assert-Equal $actual.Count $expected.Count
         for ($i=0; $i -lt $expected.Count; $i++) { Assert-Equal $actual[$i] $expected[$i] }
+    }
+    $guardRoot = Join-Path $fixture ('guard [' + [char]0x6D4B + ']')
+    $guardExe = Join-Path $guardRoot 'GuardLauncher.exe'
+    [void][IO.Directory]::CreateDirectory($guardRoot)
+    Run-Test 'Built guard uses the GUI subsystem without a console entry point' {
+        & (Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe') -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $projectRoot 'Build-Guard.ps1') -OutputPath $guardExe
+        Assert-Equal $LASTEXITCODE 0
+        $bytes = [IO.File]::ReadAllBytes($guardExe)
+        Assert-Equal ([BitConverter]::ToUInt16($bytes,0)) 0x5A4D
+        $peOffset = [BitConverter]::ToInt32($bytes,0x3C)
+        Assert-Equal ([BitConverter]::ToUInt32($bytes,$peOffset)) 0x4550
+        # IMAGE_OPTIONAL_HEADER.Subsystem is 68 bytes after the optional-header start.
+        Assert-Equal ([BitConverter]::ToUInt16($bytes,$peOffset+24+68)) 2
+    }
+    Run-Test 'Guard starts a console-free child and preserves paths, output and exit status' {
+        @'
+param([switch]$Watch,[string]$InstallDirectory)
+$ErrorActionPreference = 'Stop'
+Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class GuardConsoleProbe { [DllImport("kernel32.dll")] public static extern IntPtr GetConsoleWindow(); }'
+$result = @{ Watch=[bool]$Watch; Directory=$InstallDirectory; ConsoleWindow=[GuardConsoleProbe]::GetConsoleWindow().ToInt64() }
+[IO.File]::WriteAllText((Join-Path $PSScriptRoot 'guard-received.json'), ($result | ConvertTo-Json), [Text.Encoding]::UTF8)
+[Console]::Out.WriteLine('fixture guard output')
+[Console]::Error.WriteLine('fixture guard error')
+exit 7
+'@ | Set-Content -LiteralPath (Join-Path $guardRoot 'Manage-Launcher.ps1') -Encoding ASCII
+        $start = New-Object Diagnostics.ProcessStartInfo
+        $start.FileName=$guardExe; $start.UseShellExecute=$false
+        $process = [Diagnostics.Process]::Start($start)
+        try {
+            if (-not $process.WaitForExit(20000)) { $process.Kill(); throw 'Fixture guard timed out.' }
+            Assert-Equal $process.ExitCode 7
+        } finally { $process.Dispose() }
+        $received = ConvertFrom-Json -InputObject (Get-Content -LiteralPath (Join-Path $guardRoot 'guard-received.json') -Raw)
+        Assert-Equal $received.Watch $true
+        Assert-Equal $received.Directory $guardRoot
+        Assert-Equal $received.ConsoleWindow 0
+        $log = Get-Content -LiteralPath (Join-Path $guardRoot 'guard-launch.log') -Raw
+        Assert-True ($log.Contains('CreateNoWindow=true.'))
+        Assert-True ($log.Contains('fixture guard output'))
+        Assert-True ($log.Contains('fixture guard error'))
+        Assert-True ($log.Contains('Guard exited with code 7.'))
     }
 } finally {
     # Only delete the uniquely named fixture key created by this test run.
