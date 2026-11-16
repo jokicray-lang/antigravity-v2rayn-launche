@@ -1,6 +1,6 @@
 # Antigravity 黑屏修复（自动检测代理）
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![Version](https://img.shields.io/badge/version-2.0.1-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows_10%20%7C%2011-0078D4)
 ![PowerShell](https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -8,7 +8,9 @@
 > 自动定位 Antigravity、检测可用本地代理，并统一桌面、开始菜单和登录回调的启动入口。
 > **安装一次，以后照常点击原来的图标。** 适用于代理配置导致的黑屏、加载超时和部分登录失败问题。
 
-**当前版本：`2.0.0`** · [快速开始](#快速开始) · [高级用法](#高级用法) · [常见问题](#常见问题) · [卸载与还原](#卸载与还原)
+**当前版本：`2.0.1`** · [快速开始](#快速开始) · [高级用法](#高级用法) · [常见问题](#常见问题) · [卸载与还原](#卸载与还原)
+
+**2.0.1 更新：无窗口后台维护。** 登录后的入口维护改由 `GuardLauncher.exe` 启动，通过 `CreateNoWindow` 避免 PowerShell 控制台闪现；日常应用启动继续使用无控制台的 `ProxyLauncher.exe`。已安装旧版的用户，下载完整新版后重新运行 `Install.cmd` 即可更新，原入口备份会保留。
 
 ## 为什么会黑屏？
 
@@ -36,8 +38,8 @@
 4. **统一日常启动入口**  
    将匹配的桌面、开始菜单等快捷方式，以及 `antigravity://` 登录回调指向独立启动器，保留原来的参数、图标和工作目录。
 
-5. **自动维护更新后的入口**  
-   安装登录后运行的维护进程，每 **30 秒**检查一次，修复应用更新将匹配入口重置回原 EXE 的情况。
+5. **无窗口维护更新后的入口**
+   安装登录后运行的维护进程，每 **30 秒**检查一次，修复应用更新将匹配入口重置回原 EXE 的情况。维护进程由无控制台 EXE 启动，避免直接运行 `powershell.exe -WindowStyle Hidden` 时仍可能出现的窗口闪烁。
 
 6. **备份原配置，支持卸载还原**  
    保存原快捷方式文件、注册表值及类型；重复安装不会覆盖最初的备份。卸载时保留用户另外修改过的设置。
@@ -70,7 +72,7 @@
 %LOCALAPPDATA%\AntigravityProxyLauncher
 ```
 
-启动器独立于 Antigravity 安装目录，应用更新不会直接覆盖它。安装器会从 `Dispatcher.cs` 在本机编译小型调度程序，不依赖 VBScript 或第三方软件包。
+启动器独立于 Antigravity 安装目录，应用更新不会直接覆盖它。安装器会从 `Dispatcher.cs` 和 `GuardLauncher.cs` 在本机编译两个无控制台程序，不依赖 VBScript 或第三方软件包。安装、卸载和手动诊断入口保留可见窗口，便于查看结果；日常启动和登录后的后台维护均不创建控制台窗口。启动失败时仍可显示错误提示。
 
 ## 代理客户端与端口
 
@@ -225,6 +227,7 @@ Windows 可能缓存固定入口。先取消固定，再从更新后的桌面／
 | --- | --- |
 | `last-launch.log` | 最近一次隐藏启动的输出 |
 | `guard-error.log` | 维护进程出现错误时的记录 |
+| `guard-launch.log` | 无窗口维护宿主的启动、退出及错误记录 |
 | `install-state.json`、`backup/` | 本机入口状态及原设置备份 |
 
 | 启动退出码 | 含义 |
@@ -273,6 +276,8 @@ NO_PROXY    = localhost,127.0.0.1,::1
 | `LauncherInstall.psm1` | 备份、重定向及恢复快捷方式和注册表 |
 | `Dispatcher.cs` | 隐藏启动控制台并保留登录回调、文件等参数 |
 | `Build-Dispatcher.ps1` | 使用系统 .NET Framework 编译调度器 |
+| `GuardLauncher.cs` | 无窗口启动登录后的入口维护进程并记录结果 |
+| `Build-Guard.ps1` | 使用系统 .NET Framework 编译无窗口维护宿主 |
 | `tests/Run-Tests.ps1` | 验证代理、参数和进程环境处理 |
 | `tests/Run-InstallTests.ps1` | 验证入口接管、调度器和卸载还原 |
 | `VALIDATION.md` | 记录测试环境、检查范围与实际验证结果 |
@@ -281,7 +286,7 @@ NO_PROXY    = localhost,127.0.0.1,::1
 
 ## 测试与开源
 
-**32 个测试用例**已分别在 Windows PowerShell 5.1 和 PowerShell 7 上通过，累计执行 **64 次检查**。详见 [验证记录](VALIDATION.md)。
+**34 个测试用例**已分别在 Windows PowerShell 5.1 和 PowerShell 7 上通过，累计执行 **68 次检查**。详见 [验证记录](VALIDATION.md)。
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Run-Tests.ps1
@@ -290,7 +295,7 @@ pwsh.exe -NoProfile -File .\tests\Run-Tests.ps1
 pwsh.exe -NoProfile -File .\tests\Run-InstallTests.ps1
 ```
 
-测试使用临时目录、独立测试注册表键、本地端口和测试调度器，不修改真实 Antigravity 入口、不启动真实应用、不访问 Google。覆盖代理筛选、环境继承与恢复、参数转发、更新后入口修复和卸载还原。
+测试使用临时目录、独立测试注册表键、本地端口和测试调度器，不修改真实 Antigravity 入口、不启动真实应用、不访问 Google。覆盖代理筛选、环境继承与恢复、参数转发、更新后入口修复和卸载还原，并检查维护宿主的 GUI 子系统、子进程没有控制台、路径转发和退出日志。
 
 发布源码时请保留 `LICENSE`，不要包含安装目录中的本机配置、备份、日志或编译产物，相关路径已列入 `.gitignore`。实际 UI、真实账号登录和模型调用仍需在目标电脑验证。
 
