@@ -62,7 +62,7 @@ try {
     if ($Preview) { Write-Host 'Preview only. No changes made.'; exit 0 }
 
     [void][IO.Directory]::CreateDirectory($InstallDirectory)
-    foreach ($name in @('AntigravityProxy.psm1','LauncherInstall.psm1','Start-Antigravity.ps1','Manage-Launcher.ps1','Build-Dispatcher.ps1','Dispatcher.cs','Launch.cmd','Install.cmd','Uninstall.cmd','README.md','LICENSE')) {
+    foreach ($name in @('AntigravityProxy.psm1','LauncherInstall.psm1','Start-Antigravity.ps1','Manage-Launcher.ps1','Build-Dispatcher.ps1','Dispatcher.cs','Build-Guard.ps1','GuardLauncher.cs','Launch.cmd','Install.cmd','Uninstall.cmd','README.md','LICENSE')) {
         $source = Join-Path $PSScriptRoot $name
         $destination = Join-Path $InstallDirectory $name
         if (-not [string]::Equals([IO.Path]::GetFullPath($source), $destination, [StringComparison]::OrdinalIgnoreCase)) { Copy-Item -LiteralPath $source -Destination $destination -Force }
@@ -71,20 +71,25 @@ try {
     & (Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe') -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $InstallDirectory 'Build-Dispatcher.ps1') -OutputPath $buildPath
     if ($LASTEXITCODE -ne 0) { throw 'Could not build the local dispatcher.' }
     Move-Item -LiteralPath $buildPath -Destination $dispatcher -Force
+    $guardLauncher = Join-Path $InstallDirectory 'GuardLauncher.exe'
+    if (-not (Test-Path -LiteralPath $guardLauncher)) {
+        $guardBuildPath = Join-Path $InstallDirectory ('GuardLauncher.build-' + [guid]::NewGuid().ToString('N') + '.exe')
+        & (Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe') -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $InstallDirectory 'Build-Guard.ps1') -OutputPath $guardBuildPath
+        if ($LASTEXITCODE -ne 0) { throw 'Could not build the windowless guard.' }
+        Move-Item -LiteralPath $guardBuildPath -Destination $guardLauncher -Force
+    }
     [IO.File]::WriteAllText((Join-Path $InstallDirectory 'launcher-config.json'), (@{AntigravityPath=$exe} | ConvertTo-Json), (New-Object Text.UTF8Encoding($true)))
     $state = Read-LauncherState $InstallDirectory
     if (-not $state -or -not $state.Installed) { $state = New-LauncherState $InstallDirectory $exe }
+    $state.Version = '2.0.1'
     $state.Application = $exe
     Save-LauncherState $state
     $installApplying = $true
     foreach ($path in @($paths | Select-Object -Unique)) { Set-LauncherShortcut $state $path }
     Repair-LauncherEntries $state
-    $powerShell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-    $guardArgs = @('-NoLogo','-NoProfile','-NonInteractive','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',(Join-Path $InstallDirectory 'Manage-Launcher.ps1'),'-Watch','-InstallDirectory',$InstallDirectory)
-    $guardLine = (@($guardArgs | ForEach-Object { ConvertTo-WindowsArgument $_ }) -join ' ')
-    Set-TrackedRegistryValue $state 'Software\Microsoft\Windows\CurrentVersion\Run' 'AntigravityProxyLauncherGuard' ((ConvertTo-WindowsArgument $powerShell) + ' ' + $guardLine)
+    Set-TrackedRegistryValue $state 'Software\Microsoft\Windows\CurrentVersion\Run' 'AntigravityProxyLauncherGuard' (ConvertTo-WindowsArgument $guardLauncher)
     Save-LauncherState $state
-    Start-Process -FilePath $powerShell -ArgumentList $guardLine -WindowStyle Hidden
+    Start-Process -FilePath $guardLauncher -WindowStyle Hidden
     Write-Host 'Installed. Fully quit Antigravity once, then use your usual shortcut. No application process was terminated.'
 } catch {
     $failure = $_.Exception.Message
