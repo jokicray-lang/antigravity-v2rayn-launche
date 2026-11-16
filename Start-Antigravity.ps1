@@ -33,7 +33,7 @@ try {
         throw 'This launcher supports Windows only.'
     }
     Import-Module (Join-Path $PSScriptRoot 'AntigravityProxy.psm1') -Force -DisableNameChecking
-    Write-Host 'Antigravity automatic proxy launcher 2.0.0'
+    Write-Host 'Antigravity automatic proxy launcher 2.0.1'
     $installedConfigPath = Join-Path $PSScriptRoot 'launcher-config.json'
     if (Test-Path -LiteralPath $installedConfigPath) {
         $installedConfig = Get-Content -LiteralPath $installedConfigPath -Raw | ConvertFrom-Json
